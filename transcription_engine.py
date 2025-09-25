@@ -40,7 +40,7 @@ class TranscriptionEngine:
                 genai.configure(api_key=self.gemini_api_key)
                 # Use um nome de modelo suportado pela Generative Language API pública
                 # Evitar aliases que podem mapear para versões Vertex (ex.: "-002")
-                model_name = 'gemini-2.5-flash-lite'  # escolhido por disponibilidade pública e suporte multimodal
+                model_name = 'gemini-2.5-flash'  # escolhido por disponibilidade pública e suporte multimodal
                 self.gemini_model = genai.GenerativeModel(model_name)
                 logger.info(f"✅ Gemini inicializado com sucesso (modelo: {model_name})")
             except Exception as e:
