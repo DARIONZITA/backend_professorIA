@@ -14,7 +14,6 @@ from typing import Any, Dict, List, Optional
 
 import re
 from pymongo import ASCENDING, DESCENDING, MongoClient
-import certifi
 from pymongo.collection import Collection
 from pymongo.errors import PyMongoError
 
@@ -94,10 +93,9 @@ def init_db() -> None:
         try:
             client = MongoClient(
                 mongo_uri,
-                serverSelectionTimeoutMS=10000,
-                tlsCAFile=certifi.where(),
+                serverSelectionTimeoutMS=10000
             )
-            # Force connection (raises if credentials/URI invalid)
+            # Force connection (raises if credentials/URI invalid)  
             client.admin.command("ping")
         except PyMongoError as exc:
             raise RuntimeError(f"Failed to connect to MongoDB: {exc}") from exc
