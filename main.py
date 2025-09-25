@@ -49,6 +49,8 @@ app.add_middleware(
     # During development allow all origins to avoid CORS issues from different hostnames
     # In production restrict this to the known frontend origin(s)
     allow_origins=["https://v0-ai-tutor-app-ten.vercel.app"],  # Frontend Next.js
+    # Allow vercel subdomains and localhost for debugging preflight requests
+    allow_origin_regex=r"https?://(.+\.vercel\.app|localhost(:\d+)?)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
