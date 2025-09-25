@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-dotenv
+requests
+google-generativeai
+pymongo[srv]>=4.8.0
+pillow
+python-multipart
