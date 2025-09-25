@@ -48,7 +48,7 @@ app.add_middleware(
     CORSMiddleware,
     # During development allow all origins to avoid CORS issues from different hostnames
     # In production restrict this to the known frontend origin(s)
-    allow_origins=["*"],  # Frontend Next.js
+    allow_origins=["https://v0-ai-tutor-app-ten.vercel.app"],  # Frontend Next.js
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
