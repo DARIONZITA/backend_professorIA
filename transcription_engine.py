@@ -38,8 +38,11 @@ class TranscriptionEngine:
         if self.gemini_api_key:
             try:
                 genai.configure(api_key=self.gemini_api_key)
-                self.gemini_model = genai.GenerativeModel('gemini-1.5-flash-latest')
-                logger.info("✅ Gemini 1.5 Flash inicializado com sucesso")
+                # Use um nome de modelo suportado pela Generative Language API pública
+                # Evitar aliases que podem mapear para versões Vertex (ex.: "-002")
+                model_name = 'gemini-2.5-flash-lite'  # escolhido por disponibilidade pública e suporte multimodal
+                self.gemini_model = genai.GenerativeModel(model_name)
+                logger.info(f"✅ Gemini inicializado com sucesso (modelo: {model_name})")
             except Exception as e:
                 logger.error(f"❌ Erro ao inicializar Gemini: {e}")
                 self.gemini_model = None
@@ -54,7 +57,10 @@ class TranscriptionEngine:
         try:
             # Teste simples com texto
             response = self.gemini_model.generate_content("Diga apenas 'OK' se você conseguir me ouvir.")
-            return "OK" in response.text
+            ok = bool(response and getattr(response, 'text', '') and 'OK' in response.text)
+            if not ok:
+                logger.error(f"❌ Validação retornou resposta inesperada: {getattr(response, 'text', '')}")
+            return ok
         except Exception as e:
             logger.error(f"❌ Falha na validação do Gemini: {e}")
             return False
@@ -161,7 +167,7 @@ Se não houver texto na imagem, responda apenas: "Nenhum texto detectado"."""
         return transcribed_text
         
     except Exception as e:
-        logger.error(f"❌ Erro na transcrição Gemini: {e}")
+        logger.error(f"❌ Erro na transcrição Gemini: {e}", exc_info=True)
         return ""
 
 

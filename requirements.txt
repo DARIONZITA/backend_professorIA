@@ -6,3 +6,4 @@ google-generativeai
 pymongo[srv]>=4.8.0
 pillow
 python-multipart
+certifi
