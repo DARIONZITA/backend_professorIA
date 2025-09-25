@@ -16,6 +16,7 @@ import re
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import PyMongoError
+import certifi
 
 log = logging.getLogger("db")
 
@@ -93,7 +94,8 @@ def init_db() -> None:
         try:
             client = MongoClient(
                 mongo_uri,
-                serverSelectionTimeoutMS=10000
+                serverSelectionTimeoutMS=10000,
+                tlsCAFile=certifi.where()
             )
             # Force connection (raises if credentials/URI invalid)  
             client.admin.command("ping")
@@ -118,6 +120,35 @@ def init_db() -> None:
 
         _auto_import_json_if_needed()
         _ensure_default_students()
+
+
+def _init_sqlite() -> None:
+    """Initialize SQLite fallback database."""
+    global _sqlite_conn
+    _sqlite_conn = sqlite3.connect("professor_ai.db", check_same_thread=False)
+    cursor = _sqlite_conn.cursor()
+    
+    # Create students table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS students (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            class_name TEXT NOT NULL
+        )
+    """)
+    
+    # Create analyses table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS analyses (
+            id TEXT PRIMARY KEY,
+            studentName TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            timestamp TEXT NOT NULL,
+            data TEXT NOT NULL
+        )
+    """)
+    
+    _sqlite_conn.commit()
 
 
 def _auto_import_json_if_needed() -> None:
