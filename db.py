@@ -13,7 +13,6 @@ from threading import Lock
 from typing import Any, Dict, List, Optional
 
 import re
-import ssl
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import PyMongoError
@@ -95,10 +94,8 @@ def init_db() -> None:
             client = MongoClient(
                 mongo_uri,
                 serverSelectionTimeoutMS=5000,
-                ssl=True,
                 tls=True,
-                tlsAllowInvalidCertificates=False,
-                ssl_version=ssl.PROTOCOL_TLSv1_2
+                tlsAllowInvalidCertificates=False
             )
             # Force connection (raises if credentials/URI invalid)
             client.admin.command("ping")
