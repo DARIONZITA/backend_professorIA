@@ -26,7 +26,7 @@ _LLM_AVAILABLE = False
 
 # Groq defaults
 GROQ_API_KEY = os.getenv("API_GROQ")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 GROQ_URL = os.getenv("API_GROQ_URL", "https://api.groq.com/openai/v1/chat/completions")
 
 # Gemini defaults (fallback)
@@ -215,7 +215,7 @@ def generate_structured(prompt: str, system: str = "", temperature: float = 0.1,
     """Generates structured response (JSON) from a prompt.
 
     Behavior:
-      - Uses Groq (API_GROQ) by default with model `llama-3.1-8b-instant` and temp=0.1.
+      - Uses Groq (API_GROQ) by default with model `openai/gpt-oss-20b` and temp=0.1.
       - Falls back to Gemini if Groq is not configured.
     """
     _init_client()
