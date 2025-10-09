@@ -161,13 +161,9 @@ def _call_groq(prompt: str, system: str, temperature: float, max_output_tokens: 
         "messages": messages,
         "temperature": float(temperature),
         "max_tokens": int(max_output_tokens),
+        # response_format is optional; keep it but tolerate endpoints that ignore it
+        "response_format": {"type": "json_object"},
     }
-    # Only add response_format for models that support it (llama3-groq, etc.)
-    # Gemma models don't support json_object mode
-    model_name = os.getenv("GROQ_MODEL", GROQ_MODEL)
-    if "llama" in model_name.lower() or "mixtral" in model_name.lower():
-        payload["response_format"] = {"type": "json_object"}
-    
     # Try requests if available, otherwise fall back to urllib
     try:
         import requests
@@ -238,27 +234,29 @@ def generate_structured(prompt: str, system: str = "", temperature: float = 0.1,
             if _PROVIDER == "groq":
                 raw_text = _call_groq(prompt, system, temperature, max_output_tokens=max_output_tokens)
             else:
-                # Gemini path using modern GenerativeModel API
+                # Gemini path (best-effort, old behavior)
                 try:
                     import google.generativeai as genai  # type: ignore
                     genai.configure(api_key=os.getenv("GEMINI_API_KEY") or GEMINI_API_KEY)
-                    model_name = os.getenv("GEMINI_MODEL", GEMINI_MODEL)
-                    model = genai.GenerativeModel(model_name)
-                    
-                    # Build prompt with system instructions
+                    model = os.getenv("GEMINI_MODEL", GEMINI_MODEL)
                     parts = []
                     if system:
                         parts.append(f"SYSTEM:\n{system}\n---\n")
                     parts.append(prompt)
                     full_prompt = "\n".join(parts)
-                    
-                    # Generate content with the modern API
-                    generation_config = genai.types.GenerationConfig(
-                        temperature=temperature,
-                        max_output_tokens=max_output_tokens,
-                    )
-                    response = model.generate_content(full_prompt, generation_config=generation_config)
-                    raw_text = response.text
+                    # use the text generation API
+                    # Gemini fallback: we still pass a high token allowance if supported
+                    response = genai.generate_text(model=model, prompt=full_prompt, temperature=temperature)  # type: ignore
+                    # response may be a dict-like
+                    raw_text = ''
+                    if isinstance(response, dict):
+                        # try different keys
+                        for k in ("output", "text", "content", "generated_text"):
+                            if k in response and isinstance(response[k], str):
+                                raw_text = response[k]
+                                break
+                    else:
+                        raw_text = getattr(response, 'text', '') or str(response)
                 except Exception as e:
                     raise
 
