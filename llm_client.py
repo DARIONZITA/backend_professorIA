@@ -24,13 +24,9 @@ log = logging.getLogger("llm")
 _PROVIDER: Optional[str] = None  # 'groq' | 'gemini' | None
 _LLM_AVAILABLE = False
 
-# Groq defaults
-GROQ_API_KEY = os.getenv("API_GROQ")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+# Model defaults (keys loaded after dotenv)
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_URL = os.getenv("API_GROQ_URL", "https://api.groq.com/openai/v1/chat/completions")
-
-# Gemini defaults (fallback)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash-latest")
 
 
@@ -41,7 +37,7 @@ def _load_dotenv_if_present() -> None:
     except Exception:
         return
     # If keys already present, skip
-    if GROQ_API_KEY or GEMINI_API_KEY or os.getenv("API_GROQ") or os.getenv("GEMINI_API_KEY"):
+    if os.getenv("API_GROQ") or os.getenv("GEMINI_API_KEY"):
         return
     try:
         import dotenv  # type: ignore
@@ -88,15 +84,20 @@ def _init_client() -> None:
     global _PROVIDER, _LLM_AVAILABLE
     if _PROVIDER is not None:
         return
+    
+    # Force load dotenv if not already loaded
+    if not os.getenv("API_GROQ") and not os.getenv("GEMINI_API_KEY"):
+        _load_dotenv_if_present()
+    
     # Prefer Groq
-    groq_key = os.getenv("API_GROQ") or GROQ_API_KEY
+    groq_key = os.getenv("API_GROQ")
     if groq_key:
         _PROVIDER = "groq"
         _LLM_AVAILABLE = True
         log.info("Using Groq for text LLMs (model=%s)", GROQ_MODEL)
         return
     # Fallback to Gemini
-    gem_key = os.getenv("GEMINI_API_KEY") or GEMINI_API_KEY
+    gem_key = os.getenv("GEMINI_API_KEY")
     if gem_key:
         try:
             import google.generativeai as genai  # type: ignore
@@ -144,7 +145,7 @@ _METRICS = {
 
 def _call_groq(prompt: str, system: str, temperature: float, max_output_tokens: int = 512, timeout: int = 30) -> str:
     """Call Groq (OpenAI-compatible endpoint) and return text output."""
-    api_key = os.getenv("API_GROQ") or GROQ_API_KEY
+    api_key = os.getenv("API_GROQ")
     if not api_key:
         raise RuntimeError("API_GROQ not configured")
     url = os.getenv("API_GROQ_URL") or GROQ_URL
@@ -237,7 +238,7 @@ def generate_structured(prompt: str, system: str = "", temperature: float = 0.1,
                 # Gemini path (best-effort, old behavior)
                 try:
                     import google.generativeai as genai  # type: ignore
-                    genai.configure(api_key=os.getenv("GEMINI_API_KEY") or GEMINI_API_KEY)
+                    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
                     model = os.getenv("GEMINI_MODEL", GEMINI_MODEL)
                     parts = []
                     if system:
